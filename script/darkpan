@@ -1,0 +1,15 @@
+#!/usr/bin/env perl
+
+# $ darkpan prefork
+# Web application available at http://127.0.0.1:3000
+# $ curl -T my_app-0.02.tar.gz http://localhost:3000/upload/my_app-0.02.tar.gz
+# $ HTTP_PROXY=http://localhost:3000 cpanm -v MyApp@0.01
+
+use Mojolicious::Lite -signatures;
+
+use Cwd;
+use Mojo::File qw(path);
+
+plugin 'Darkpan' => {public => path->child('public')};
+
+app->start;
