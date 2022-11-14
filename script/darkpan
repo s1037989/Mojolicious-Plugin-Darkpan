@@ -8,8 +8,9 @@
 use Mojolicious::Lite -signatures;
 
 use Cwd;
-use Mojo::File qw(path);
+use Mojo::File qw(curfile path);
+use lib curfile->dirname->sibling('lib')->to_string;
 
-plugin 'Darkpan' => {public => path->child('public')};
+my $darkpan = plugin 'Darkpan' => {public => path(getcwd)->child('public')};
 
 app->start;

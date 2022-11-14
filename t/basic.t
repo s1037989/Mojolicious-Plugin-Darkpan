@@ -7,6 +7,8 @@ use Mojolicious::Lite -signatures;
 use Test::Mojo;
 
 use Mojo::File qw(curfile tempdir);
+use Mojo::JSON qw(j);
+use Mojo::JSON::Pointer;
 use Mojo::UserAgent;
 use Mojo::Util qw(gunzip gzip);
 
@@ -22,13 +24,21 @@ subtest 'app works' => sub {
   $t->get_ok('/')->status_is(200)->content_is('Hello Mojo!')
 };
 
+subtest 'helpers' => sub {
+  is_deeply $t->app->reply->json(a => 1), {a=>1};
+  is_deeply $t->app->reply->json({a => 1}), {a=>1};
+  is_deeply [$t->app->hash->file('MyApp', 'my_app-0.01.tar.gz')], [qw(M MY MYA my_app-0.01.tar.gz)];
+  # $t->app->check_upload
+  # $t->app->index->update
+};
+
 subtest 'no 02packages.details.txt.gz' => sub {
-  $t->get_ok('/modules/02packages.details.txt.gz')->status_is(404);
+  $t->head_ok('/modules/02packages.details.txt.gz')->status_is(404);
 };
 
 subtest 'no history' => sub {
-  $t->get_ok('/v1.0/history/MyApp')->status_is(404);
-  $t->get_ok('/v1.0/history/Qaz')->status_is(404);
+  $t->head_ok('/v1.0/history/MyApp')->status_is(404);
+  $t->head_ok('/v1.0/history/Qaz')->status_is(404);
 };
 
 subtest 'no packages' => sub {
@@ -89,7 +99,19 @@ subtest 'proxy as a darkpan' => sub {
   $t->ua->proxy->http($server_url);
   $t->head_ok('http://www.cpan.org/v1.0/history/Qaz')
     ->status_is(200)
-    ->header_is(Server => 'Mojolicious (Perl)');
+    ->header_is(Server => 'Mojolicious (Perl)'); # ensure the server really is this test app, not cpan.org
+};
+
+subtest 'upload command' => sub {
+  require Darkpan::Command::upload;
+  my $upload = Darkpan::Command::upload->new;
+  ok $upload->description, 'has a description';
+  my $buffer = '';
+  open my $handle, '>', \$buffer;
+  local *STDOUT = $handle;
+  $upload->run(curfile->sibling('my_app-0.01.tar.gz'));
+  my $jp = Mojo::JSON::Pointer->new(j($buffer));
+  is $jp->get('/err'), 'package exists', 'right output';
 };
 
 done_testing();

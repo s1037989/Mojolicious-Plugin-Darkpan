@@ -1,0 +1,10 @@
+^\.(?!perltidyrc)
+.*\.old$
+(?<!my_app-0\.01)\.tar\.gz$
+^Makefile$
+^MYMETA\.
+^blib
+^pm_to_blib
+\B\.DS_Store
+MANIFEST.bak
+public
